@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2023/12/09 13:25:07.000.062,=C:\Users\oforo\Documents\Embarcadero\Studio\Projects\Project2PCH1.h</Transaction>
+    <Transaction>2023/12/09 13:25:07.000.145,=C:\Users\oforo\Documents\Embarcadero\Studio\Projects\Unit1.cpp</Transaction>
+    <Transaction>2024/03/17 17:08:50.000.973,=C:\Users\oforo\Documents\Embarcadero\Studio\Projects\File2.cpp</Transaction>
+    <Transaction>2024/03/17 17:08:50.000.967,=C:\Users\oforo\Documents\Embarcadero\Studio\Projects\Project2PCH1.h</Transaction>
+    <Transaction>2024/03/17 17:09:26.000.487,C:\Users\oforo\Documents\Embarcadero\Studio\Projects\File2.cpp=C:\Work\SDR\testProjects\loadLib\File2.cpp</Transaction>
+    <Transaction>2024/03/17 17:09:26.000.494,C:\Users\oforo\Documents\Embarcadero\Studio\Projects\Project2.cbproj=C:\Work\SDR\testProjects\loadLib\Project2.cbproj</Transaction>
+    <Transaction>2024/03/17 17:09:26.000.474,C:\Users\oforo\Documents\Embarcadero\Studio\Projects\Project2PCH1.h=C:\Work\SDR\testProjects\loadLib\Project2PCH1.h</Transaction>
+    <Transaction>2024/03/17 17:10:21.000.946,C:\Work\SDR\testProjects\loadLib\Project2PCH1.h=C:\Work\SDR\testProjects\loadLib\LoadSDRLibPCH1.h</Transaction>
+    <Transaction>2024/03/17 17:10:21.000.950,C:\Work\SDR\testProjects\loadLib\Project2.cbproj=C:\Work\SDR\testProjects\loadLib\LoadSDRLib.cbproj</Transaction>
+    <Transaction>2024/03/17 18:01:35.000.486,=C:\Work\SDR\testProjects\loadLib\Win64\Debug\rtlsdr.lib</Transaction>
+    <Transaction>2024/03/17 18:10:08.000.619,C:\Work\SDR\testProjects\loadLib\Win64\Debug\rtlsdr.lib=</Transaction>
+    <Transaction>2024/03/17 18:11:22.000.538,=C:\Work\SDR\testProjects\loadLib\rtlsdr.lib</Transaction>
+    <Transaction>2024/03/17 18:12:11.000.354,C:\Work\SDR\testProjects\loadLib\rtlsdr.lib=</Transaction>
+    <Transaction>2024/03/17 18:14:02.000.141,=C:\Work\SDR\testProjects\loadLib\rtlsdr.o</Transaction>
+    <Transaction>2024/03/17 18:14:34.000.440,=C:\Work\SDR\testProjects\loadLib\rtlsdr.a</Transaction>
+  </Transactions>
+	<ProjectSortOrder AutoSort="0" SortType="0">
+    <File Path="File2.cpp"/>
+    <File Path="LoadSDRLibPCH1.h"/>
+    <File Path="rtlsdr.a"/>
+  </ProjectSortOrder>
+</BorlandProject>
