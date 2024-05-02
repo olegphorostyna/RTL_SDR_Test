@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2023/12/09 13:25:07.000.062,=C:\Users\oforo\Documents\Embarcadero\Studio\Projects\Project2PCH1.h</Transaction>
+    <Transaction>2023/12/09 13:25:07.000.145,=C:\Users\oforo\Documents\Embarcadero\Studio\Projects\Unit1.cpp</Transaction>
+    <Transaction>2024/03/21 13:10:54.000.973,=C:\Users\oforo\Documents\Embarcadero\Studio\Projects\Unit1.cpp</Transaction>
+    <Transaction>2024/03/21 13:10:54.000.860,=C:\Users\oforo\Documents\Embarcadero\Studio\Projects\Project2PCH1.h</Transaction>
+    <Transaction>2024/03/21 13:11:30.000.319,C:\Users\oforo\Documents\Embarcadero\Studio\Projects\Unit1.cpp=C:\Work\SDR\testProjects\VCL_SDR\Unit1.cpp</Transaction>
+    <Transaction>2024/03/21 13:11:30.000.319,C:\Users\oforo\Documents\Embarcadero\Studio\Projects\Unit1.h=C:\Work\SDR\testProjects\VCL_SDR\Unit1.h</Transaction>
+    <Transaction>2024/03/21 13:11:30.000.319,C:\Users\oforo\Documents\Embarcadero\Studio\Projects\Unit1.dfm=C:\Work\SDR\testProjects\VCL_SDR\Unit1.dfm</Transaction>
+    <Transaction>2024/03/21 13:11:30.000.346,C:\Users\oforo\Documents\Embarcadero\Studio\Projects\Project2.cbproj=C:\Work\SDR\testProjects\VCL_SDR\Project2.cbproj</Transaction>
+    <Transaction>2024/03/21 13:11:30.000.285,C:\Users\oforo\Documents\Embarcadero\Studio\Projects\Project2PCH1.h=C:\Work\SDR\testProjects\VCL_SDR\Project2PCH1.h</Transaction>
+    <Transaction>2024/03/21 13:11:45.000.071,C:\Work\SDR\testProjects\VCL_SDR\Project2PCH1.h=C:\Work\SDR\testProjects\VCL_SDR\VCL_SDRPCH1.h</Transaction>
+    <Transaction>2024/03/21 13:11:45.000.096,C:\Work\SDR\testProjects\VCL_SDR\Project2.cbproj=C:\Work\SDR\testProjects\VCL_SDR\VCL_SDR.cbproj</Transaction>
+    <Transaction>2024/03/21 13:14:16.000.955,=C:\Work\SDR\testProjects\VCL_SDR\rtlsdr.a</Transaction>
+    <Transaction>2024/03/31 19:29:06.000.462,=C:\Work\SDR\testProjects\VCL_SDR\convenience\convenience.c</Transaction>
+    <Transaction>2024/03/31 19:29:06.000.581,=C:\Work\SDR\testProjects\VCL_SDR\convenience\convenience.h</Transaction>
+    <Transaction>2024/03/31 19:32:13.000.238,C:\Work\SDR\testProjects\VCL_SDR\convenience\convenience.c=</Transaction>
+    <Transaction>2024/03/31 19:32:18.000.188,C:\Work\SDR\testProjects\VCL_SDR\convenience\convenience.h=</Transaction>
+    <Transaction>2024/04/13 13:35:25.000.782,=C:\Work\SDR\testProjects\VCL_SDR\libfftw3-3.a</Transaction>
+  </Transactions>
+</BorlandProject>
