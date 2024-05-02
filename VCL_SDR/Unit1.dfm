@@ -20,6 +20,13 @@ object Form1: TForm1
     Caption = 'Device log:'
     FocusControl = Memo1
   end
+  object TrackValue: TLabel
+    Left = 8
+    Top = 275
+    Width = 55
+    Height = 15
+    Caption = 'TrackValue'
+  end
   object StartRTLSDR: TButton
     Left = 8
     Top = 8
@@ -97,5 +104,18 @@ object Form1: TForm1
     Caption = 'Simulate'
     TabOrder = 5
     OnClick = Button3Click
+  end
+  object TrackBar1: TTrackBar
+    Left = 8
+    Top = 296
+    Width = 150
+    Height = 45
+    Max = 1000000
+    Min = 1000
+    ParentShowHint = False
+    Position = 1000
+    ShowHint = True
+    TabOrder = 6
+    OnChange = TrackBar1Change
   end
 end

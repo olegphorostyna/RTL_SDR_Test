@@ -26,7 +26,7 @@ static int n; /*!< Used at raw I/Q data to complex conversion */
 
 double out_r, out_i; /*!< Real and imaginary parts of FFT *out values */
 static float amp, db; /*!< Amplitude & dB */
-int _num_read = 500;
+int _num_read = 50;
 
 std::vector<std::complex<double>> out_val;
 
@@ -368,15 +368,23 @@ void signal_simulation(int frequency){
    signal_buf[i*2+1]=(uint8_t)(127*cos(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128);
  }
 
- //for (int i = 0; i < 512; i++) {
-  // RealTimeAdd(Form1->Series1,signal_buf[i*2], i);
- //}
+// for (int i = 0; i < 512; i++) {
+//   RealTimeAdd(Form1->Series1,signal_buf[i*2], i);
+// }
  create_fft(n_read, signal_buf);
 }
 
 void __fastcall TForm1::Button3Click(TObject *Sender)
 {
-	signal_simulation(1'000'000);
+	signal_simulation(1'000'00);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::TrackBar1Change(TObject *Sender)
+{
+   Series1->Delete(0,512);
+   TrackValue->Caption=TrackBar1->Position;
+   signal_simulation(TrackBar1->Position);
 }
 //---------------------------------------------------------------------------
 

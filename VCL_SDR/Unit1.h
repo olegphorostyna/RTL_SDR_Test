@@ -15,6 +15,7 @@
 #include <VCLTee.Series.hpp>
 #include "./include/rtl-sdr.h"
 #include "./include/fftw3.h"
+#include <Vcl.ComCtrls.hpp>
 //---------------------------------------------------------------------------
 extern rtlsdr_dev_t *dev;
 
@@ -29,11 +30,14 @@ __published:	// IDE-managed Components
 	TLabel *Label1;
 	TButton *Button1;
 	TButton *Button3;
+	TTrackBar *TrackBar1;
+	TLabel *TrackValue;
 	void __fastcall FormCreate(TObject *Sender);
 	void __fastcall StartRTLSDRClick(TObject *Sender);
 	void __fastcall Button2Click(TObject *Sender);
 	void __fastcall Button1Click(TObject *Sender);
 	void __fastcall Button3Click(TObject *Sender);
+	void __fastcall TrackBar1Change(TObject *Sender);
 private:	// User declarations
 public:		// User declarations
 	__fastcall TForm1(TComponent* Owner);
@@ -49,7 +53,7 @@ class DeviceConfig{
    DeviceConfig();
    ~DeviceConfig();
 
-   uint32_t center_frequency = 433973000;
+   uint32_t center_frequency = 433920000;
    uint32_t sample_rate = 512*4000;//2 048 000
 };
 
