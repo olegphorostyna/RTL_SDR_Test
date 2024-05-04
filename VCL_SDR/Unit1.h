@@ -56,8 +56,8 @@ class DeviceConfig{
    DeviceConfig();
    ~DeviceConfig();
 
-   //uint32_t center_frequency = 433920000;
-   uint32_t center_frequency = 101'700'000;
+   uint32_t center_frequency = 434'000'000;
+//   uint32_t center_frequency = 101'700'000;
    uint32_t sample_rate = 512*4000;//2 048 000
 };
 

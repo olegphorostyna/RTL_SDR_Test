@@ -8,6 +8,7 @@
 #include <complex>
 #include <vector>
 #include <cmath>
+#include <algorithm>
 
 
 //---------------------------------------------------------------------------
@@ -25,7 +26,7 @@ static fftw_plan fftwp; /**!
 static int n; /*!< Used at raw I/Q data to complex conversion */
 
 double out_r, out_i; /*!< Real and imaginary parts of FFT *out values */
-static float amp, db; /*!< Amplitude & dB */
+static double amp, db; /*!< Amplitude & dB */
 int _num_read = 50;
 
 std::vector<std::complex<double>> out_val;
@@ -65,7 +66,7 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
   // Initialize axis scales
   // we're assuming left axis values are within [0,250]
   //Chart1->LeftAxis->SetMinMax(-20,45);
-  Chart1->LeftAxis->SetMinMax(0,260);
+  Chart1->LeftAxis->SetMinMax(-90,-30);
   Chart1->BottomAxis->SetMinMax(1,chartConf.MaxPoints);
 
   // Speed tips:
@@ -100,6 +101,17 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
 
 void RealTimeAdd(TChartSeries *Series, float YValue, int xValue){
 	Series->AddXY(xValue,YValue);
+}
+
+
+
+void centering(fftw_complex *r ) {
+ int s = 1;
+ for (int i = 0; i <512; i++) {
+ s = -s;
+ r[i][0] *= s;
+ r[i][1] *= s;
+ }
 }
 
 
@@ -158,22 +170,25 @@ static void create_fft(int sample_c, uint8_t *buf){
 //		out_val.push_back((buf[n]-127.34) + (buf[n+1]-127.34) * 1i);
 		in[i][0] = ((buf[i*2]-127.34));
 		in[i][1] = ((buf[i*2+1]-127.34));
-		//in[i][0] = ((buf[i*2]-127.4)/128);
-		//in[i][1] = ((buf[i*2+1]-127.4)/128);
+//		in[i][0] = ((buf[i*2]-127.4)/128);
+//		in[i][1] = ((buf[i*2+1]-127.4)/128);
 	}
 	/**!
 	 * Convert the complex samples to complex frequency domain.
 	 * Compute FFT.
 	 */
+	//centering(in);
 	fftw_execute(fftwp);
 	Form1->Series1->Delete(0,sample_c);
 	Application->ProcessMessages();
+	std::rotate(&out[0], &out[(512>>1)],&out[512]);
 	for (int i=0; i < sample_c; i+=2){
 	   out_r = out[i][0] * out[i][0];
 	   //Memo1->Lines->Add(out_r);
 	   out_i = out[i][1] * out[i][1];
 	   //Memo1->Lines->Add("Failed to set tuner gain");
 	   amp = sqrt(out_r + out_i);
+	   amp=amp*amp/(512*2048000);
 	   db = 10 * log10(amp);
 	   RealTimeAdd(Form1->Series1, db, i);
 	   //RealTimeAdd(Form1->Series1, out_r, i);
@@ -364,25 +379,27 @@ rtlsdr_read_async(dev, async_read_callback, NULL, 0, n_read * n_read);
 void signal_simulation(int frequency){
  uint8_t signal_buf[1024];
  for (int i=0;i<n_read; i++) {
-   signal_buf[i*2]=(uint8_t)(127*sin(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128);
-   signal_buf[i*2+1]=(uint8_t)(127*cos(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128);
+   signal_buf[i*2]=(uint8_t)(60*cos(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128);
+   signal_buf[i*2+1]=(uint8_t)(60*sin(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128);
  }
 
 // for (int i = 0; i < 512; i++) {
 //   RealTimeAdd(Form1->Series1,signal_buf[i*2], i);
+//  // RealTimeAdd(Form1->Series2,signal_buf[i*2+1], i);
 // }
  create_fft(n_read, signal_buf);
 }
 
 void __fastcall TForm1::Button3Click(TObject *Sender)
 {
-	signal_simulation(1'000'00);
+	signal_simulation(100'000);
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TForm1::TrackBar1Change(TObject *Sender)
 {
    Series1->Delete(0,512);
+   Series2->Delete(0,512);
    TrackValue->Caption=TrackBar1->Position;
    signal_simulation(TrackBar1->Position);
 }

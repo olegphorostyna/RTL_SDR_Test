@@ -73,9 +73,9 @@ object Form1: TForm1
     DefaultCanvas = 'TGDIPlusCanvas'
     PrintMargins = (
       15
-      32
+      30
       15
-      32)
+      30)
     ColorPaletteIndex = 13
     object Series1: TFastLineSeries
       HoverElement = []
