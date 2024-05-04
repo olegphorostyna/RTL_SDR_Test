@@ -32,12 +32,15 @@ __published:	// IDE-managed Components
 	TButton *Button3;
 	TTrackBar *TrackBar1;
 	TLabel *TrackValue;
+	TFastLineSeries *Series2;
+	TButton *Button4;
 	void __fastcall FormCreate(TObject *Sender);
 	void __fastcall StartRTLSDRClick(TObject *Sender);
 	void __fastcall Button2Click(TObject *Sender);
 	void __fastcall Button1Click(TObject *Sender);
 	void __fastcall Button3Click(TObject *Sender);
 	void __fastcall TrackBar1Change(TObject *Sender);
+	void __fastcall Button4Click(TObject *Sender);
 private:	// User declarations
 public:		// User declarations
 	__fastcall TForm1(TComponent* Owner);
@@ -53,7 +56,8 @@ class DeviceConfig{
    DeviceConfig();
    ~DeviceConfig();
 
-   uint32_t center_frequency = 433920000;
+   //uint32_t center_frequency = 433920000;
+   uint32_t center_frequency = 101'700'000;
    uint32_t sample_rate = 512*4000;//2 048 000
 };
 

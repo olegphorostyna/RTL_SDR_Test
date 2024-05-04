@@ -388,3 +388,15 @@ void __fastcall TForm1::TrackBar1Change(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
+void __fastcall TForm1::Button4Click(TObject *Sender)
+{
+rtlsdr_read_sync(dev, config.buffer, config.out_block_size, &config.bytes_in_response);
+Form1->Series1->Delete(0,512);
+Form1->Series2->Delete(0,512);
+   for (int i = 0; i < 512; i++) {
+   RealTimeAdd(Form1->Series1,config.buffer[i*2], i);
+   RealTimeAdd(Form1->Series2,config.buffer[i*2+1], i);
+}
+}
+//---------------------------------------------------------------------------
+

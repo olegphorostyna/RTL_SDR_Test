@@ -2,7 +2,7 @@ object Form1: TForm1
   Left = 0
   Top = 0
   Caption = 'Form1'
-  ClientHeight = 500
+  ClientHeight = 579
   ClientWidth = 1127
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -49,7 +49,7 @@ object Form1: TForm1
   end
   object Memo1: TMemo
     Left = 8
-    Top = 368
+    Top = 447
     Width = 1111
     Height = 124
     ScrollBars = ssVertical
@@ -59,7 +59,7 @@ object Form1: TForm1
     Left = 175
     Top = 8
     Width = 944
-    Height = 345
+    Height = 377
     Legend.Visible = False
     Title.Text.Strings = (
       'TChart')
@@ -79,8 +79,18 @@ object Form1: TForm1
     ColorPaletteIndex = 13
     object Series1: TFastLineSeries
       HoverElement = []
+      SeriesColor = 15204364
       DrawAllPoints = False
-      LinePen.Color = 10708548
+      LinePen.Color = 15204364
+      XValues.Name = 'X'
+      XValues.Order = loAscending
+      YValues.Name = 'Y'
+      YValues.Order = loNone
+    end
+    object Series2: TFastLineSeries
+      HoverElement = []
+      SeriesColor = 2631935
+      LinePen.Color = 2631935
       XValues.Name = 'X'
       XValues.Order = loAscending
       YValues.Name = 'Y'
@@ -98,7 +108,7 @@ object Form1: TForm1
   end
   object Button3: TButton
     Left = 24
-    Top = 208
+    Top = 232
     Width = 121
     Height = 25
     Caption = 'Simulate'
@@ -117,5 +127,14 @@ object Form1: TForm1
     ShowHint = True
     TabOrder = 6
     OnChange = TrackBar1Change
+  end
+  object Button4: TButton
+    Left = 8
+    Top = 416
+    Width = 75
+    Height = 25
+    Caption = 'ReadRawIQ'
+    TabOrder = 7
+    OnClick = Button4Click
   end
 end
