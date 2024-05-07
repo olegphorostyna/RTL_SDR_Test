@@ -16,6 +16,7 @@
 #include "./include/rtl-sdr.h"
 #include "./include/fftw3.h"
 #include <Vcl.ComCtrls.hpp>
+#include <Vcl.NumberBox.hpp>
 //---------------------------------------------------------------------------
 extern rtlsdr_dev_t *dev;
 
@@ -34,6 +35,7 @@ __published:	// IDE-managed Components
 	TLabel *TrackValue;
 	TFastLineSeries *Series2;
 	TButton *Button4;
+	TNumberBox *NumberBox1;
 	void __fastcall FormCreate(TObject *Sender);
 	void __fastcall StartRTLSDRClick(TObject *Sender);
 	void __fastcall Button2Click(TObject *Sender);
@@ -41,6 +43,8 @@ __published:	// IDE-managed Components
 	void __fastcall Button3Click(TObject *Sender);
 	void __fastcall TrackBar1Change(TObject *Sender);
 	void __fastcall Button4Click(TObject *Sender);
+	void __fastcall NumberBox1KeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
+
 private:	// User declarations
 public:		// User declarations
 	__fastcall TForm1(TComponent* Owner);
@@ -56,9 +60,13 @@ class DeviceConfig{
    DeviceConfig();
    ~DeviceConfig();
 
-   uint32_t center_frequency = 434'000'000;
+//   uint32_t center_frequency = 434'000'000;
 //   uint32_t center_frequency = 101'700'000;
+	uint32_t center_frequency = 100'700'000;
    uint32_t sample_rate = 512*4000;//2 048 000
+   bool freq_update = false;
+   bool shutDown= false;
+   bool read_samples=true;
 };
 
 DeviceConfig::DeviceConfig(){
@@ -74,7 +82,7 @@ class ChartConfig{
   int MaxPoints=512;
   // Number of points deleted when scrolling chart
   int ScrollPoints = 5000;
-  bool Stopped = true;
+
 };
 
 

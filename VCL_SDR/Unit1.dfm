@@ -137,4 +137,13 @@ object Form1: TForm1
     TabOrder = 7
     OnClick = Button4Click
   end
+  object NumberBox1: TNumberBox
+    Left = 864
+    Top = 391
+    Width = 121
+    Height = 23
+    Mode = nbmFloat
+    TabOrder = 8
+    OnKeyDown = NumberBox1KeyDown
+  end
 end

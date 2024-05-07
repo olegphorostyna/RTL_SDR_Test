@@ -9,6 +9,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <thread>
 
 
 //---------------------------------------------------------------------------
@@ -27,9 +28,7 @@ static int n; /*!< Used at raw I/Q data to complex conversion */
 
 double out_r, out_i; /*!< Real and imaginary parts of FFT *out values */
 static double amp, db; /*!< Amplitude & dB */
-int _num_read = 50;
-
-std::vector<std::complex<double>> out_val;
+std::thread samples_thread;
 
 TForm1 *Form1;
 rtlsdr_dev_t *dev=NULL; //rtl-sdr device
@@ -67,7 +66,7 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
   // we're assuming left axis values are within [0,250]
   //Chart1->LeftAxis->SetMinMax(-20,45);
   Chart1->LeftAxis->SetMinMax(-90,-30);
-  Chart1->BottomAxis->SetMinMax(1,chartConf.MaxPoints);
+  Chart1->BottomAxis->SetMinMax(0,n_read);
 
   // Speed tips:
   // When using only a single thread, disable locking:
@@ -87,34 +86,6 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
 
 
 }
-
-//void RealTimeAdd(TChartSeries *Series, float YValue ){
-// float XValue;
-//	if(Series->Count() == 0){
-//	  XValue=1;}
-//	  else{
-//	   XValue=Series->XValues->Last()+1;
-//	  }
-//
-//	Series->AddXY(XValue,YValue);
-//}
-
-void RealTimeAdd(TChartSeries *Series, float YValue, int xValue){
-	Series->AddXY(xValue,YValue);
-}
-
-
-
-void centering(fftw_complex *r ) {
- int s = 1;
- for (int i = 0; i <512; i++) {
- s = -s;
- r[i][0] *= s;
- r[i][1] *= s;
- }
-}
-
-
 
 /*!
  * Create FFT graph from raw I/Q samples read from RTL-SDR.
@@ -166,8 +137,6 @@ static void create_fft(int sample_c, uint8_t *buf){
 	 */
 
 	for (int i=0; i<sample_c; i++){
-//	using namespace std::complex_literals;
-//		out_val.push_back((buf[n]-127.34) + (buf[n+1]-127.34) * 1i);
 		in[i][0] = ((buf[i*2]-127.34));
 		in[i][1] = ((buf[i*2+1]-127.34));
 //		in[i][0] = ((buf[i*2]-127.4)/128);
@@ -181,64 +150,17 @@ static void create_fft(int sample_c, uint8_t *buf){
 	fftw_execute(fftwp);
 	Form1->Series1->Delete(0,sample_c);
 	Application->ProcessMessages();
-	std::rotate(&out[0], &out[(512>>1)],&out[512]);
+	std::rotate(&out[0], &out[(sample_c>>1)],&out[sample_c]);
 	for (int i=0; i < sample_c; i+=2){
 	   out_r = out[i][0] * out[i][0];
 	   //Memo1->Lines->Add(out_r);
 	   out_i = out[i][1] * out[i][1];
 	   //Memo1->Lines->Add("Failed to set tuner gain");
 	   amp = sqrt(out_r + out_i);
-	   amp=amp*amp/(512*2048000);
+	   amp=amp*amp/(sample_c*2048000);
 	   db = 10 * log10(amp);
-	   RealTimeAdd(Form1->Series1, db, i);
-	   //RealTimeAdd(Form1->Series1, out_r, i);
+	   Form1->Series1->AddXY(i,db);
 	}
-
-//	if(!_cont_read && _use_gnuplot)
-//		log_info("Creating FFT graph from samples using gnuplot...\n");
-//	else if (!_cont_read && !_use_gnuplot)
-//		log_info("Reading samples...\n");
-//	if(_use_gnuplot)
-//		gnuplot_exec("plot '-' smooth frequency with linespoints lt -1 notitle\n");
-//	for (int i=0; i < sample_c; i++){
-//		/**!
-//		 * Compute magnitude from complex values. [Sqr(Re^2 + Im^2)]
-//		 * Compute amplitude (dB) from magnitude. [10 * Log(magnitude)]
-//		 *
-//		 * TODO #5: Check correctness of this calculation.
-//		 */
-//		out_r = creal(out[i]) * creal(out[i]);
-//		out_i = cimag(out[i]) * cimag(out[i]);
-//		amp = sqrt(out_r + out_i);
-//		if (!_mag_graph)
-//			db = 10 * log10(amp);
-//		else
-//			db = amp;
-//		if(_write_file)
-//			fprintf(file, "%d	%f\n", i+1, db);
-//		if(_use_gnuplot)
-//			gnuplot_exec("%d	%f\n", db, i+1);
-//		/**!
-//		 * Fill sample_bin with ID and values.
-//		 *
-//		 * NOTE: sample_bin is not used anywhere.
-//		 *
-//		 * TODO #2: Find the maximum value of samples, show it on graph
-//		 * with a different color.  Might be useful for frequency scanner.
-//		 * If you want to sort values see qsort function.
-//		 * Example code: qsort(sample_bin, n_read, sizeof(Bin), cmp_sample);
-//		 */
-//		sample_bin[i].id = i;
-//		sample_bin[i].val = db;
-//	}
-//	if(_use_gnuplot){
-//		/**!
-//		 * Stop giving points to gnuplot with 'e' command.
-//		 * Have to flush the output buffer for [read -> graph] persistence.
-//		 */
-//		gnuplot_exec("e\n");
-//		fflush(gnuplotPipe);
-//	}
 	/**!
 	 * Deallocate FFT plan.
 	 * Free 'in' and 'out' memory regions.
@@ -263,12 +185,11 @@ static void create_fft(int sample_c, uint8_t *buf){
 static void async_read_callback(uint8_t *n_buf, uint32_t len, void *ctx){
 
 	create_fft(n_read, n_buf);
-	if(!_num_read){
-	rtlsdr_cancel_async(dev);
-   }else {
-  _num_read--;
-	rtlsdr_read_async(dev, async_read_callback, NULL, 0, n_read * n_read);
-  }
+	if(!config.read_samples){
+		rtlsdr_cancel_async(dev);
+	}else {
+		rtlsdr_read_async(dev, async_read_callback, NULL, 0, n_read * n_read);
+	}
 	//_cont_read - 0 for only one read and 1 for continues read
 	//_num_read - number of read to do
 	//read_count - current read count; is increased after the each fft output
@@ -346,41 +267,41 @@ if (0 != rtlsdr_open(&dev, 0)) {
 			return;
 		}
 	}
+	config.read_samples=true;
+	config.shutDown=false;
 }
 
 //---------------------------------------------------------------------------
 void __fastcall TForm1::Button2Click(TObject *Sender)
 {
-rtlsdr_cancel_async(dev);
-rtlsdr_close(dev);
-dev=NULL;
+config.read_samples=false;
+config.shutDown = true;
 }
 //---------------------------------------------------------------------------
 
+void readSamples(){
+	rtlsdr_read_async(dev, async_read_callback, NULL, 0, n_read * n_read);
+	if (config.shutDown) {
+		rtlsdr_close(dev);
+	}
+	if(config.freq_update){
+	   rtlsdr_set_center_freq(dev, config.center_frequency);
+	   config.read_samples=true;
+	   config.freq_update=false;
+	   readSamples();
+	}
+}
+
 void __fastcall TForm1::Button1Click(TObject *Sender)
 {
-	/*!
- * Read samples from the device asynchronously. This function will block until
- * it is being canceled using rtlsdr_cancel_async()
- *
- * \param dev the device handle given by rtlsdr_open()
- * \param cb callback function to return received samples
- * \param ctx user specific context to pass via the callback function
- * \param buf_num optional buffer count, buf_num * buf_len = overall buffer size
- *		  set to 0 for default buffer count (15)
- * \param buf_len optional buffer length, must be multiple of 512,
- *		  should be a multiple of 16384 (URB size), set to 0
- *		  for default buffer length (16 * 32 * 512)
- * \return 0 on success
- */
-rtlsdr_read_async(dev, async_read_callback, NULL, 0, n_read * n_read);
+	readSamples();
 }
 //---------------------------------------------------------------------------
 void signal_simulation(int frequency){
- uint8_t signal_buf[1024];
+ uint8_t signal_buf[n_read*2];
  for (int i=0;i<n_read; i++) {
-   signal_buf[i*2]=(uint8_t)(60*cos(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128);
-   signal_buf[i*2+1]=(uint8_t)(60*sin(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128);
+   signal_buf[i*2]=(uint8_t)(127.5*cos(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128);
+   signal_buf[i*2+1]=(uint8_t)(127.5*sin(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128);
  }
 
 // for (int i = 0; i < 512; i++) {
@@ -398,8 +319,8 @@ void __fastcall TForm1::Button3Click(TObject *Sender)
 
 void __fastcall TForm1::TrackBar1Change(TObject *Sender)
 {
-   Series1->Delete(0,512);
-   Series2->Delete(0,512);
+   Series1->Delete(0,n_read);
+   Series2->Delete(0,n_read);
    TrackValue->Caption=TrackBar1->Position;
    signal_simulation(TrackBar1->Position);
 }
@@ -408,12 +329,26 @@ void __fastcall TForm1::TrackBar1Change(TObject *Sender)
 void __fastcall TForm1::Button4Click(TObject *Sender)
 {
 rtlsdr_read_sync(dev, config.buffer, config.out_block_size, &config.bytes_in_response);
-Form1->Series1->Delete(0,512);
-Form1->Series2->Delete(0,512);
-   for (int i = 0; i < 512; i++) {
-   RealTimeAdd(Form1->Series1,config.buffer[i*2], i);
-   RealTimeAdd(Form1->Series2,config.buffer[i*2+1], i);
+Form1->Series1->Delete(0,n_read);
+Form1->Series2->Delete(0,n_read);
+   for (int i = 0; i < n_read; i++) {
+   Form1->Series1->AddXY(i, config.buffer[i*2]);
+   Form1->Series2->AddXY(i, config.buffer[i*2+1]);
 }
 }
 //---------------------------------------------------------------------------
+
+
+void __fastcall TForm1::NumberBox1KeyDown(TObject *Sender, WORD &Key, TShiftState Shift)
+{
+if (Key == VK_RETURN)
+	{
+		config.freq_update=true;
+		config.center_frequency =NumberBox1->Value*1'000'000;
+		config.read_samples=false;
+	}
+}
+//---------------------------------------------------------------------------
+
+
 
