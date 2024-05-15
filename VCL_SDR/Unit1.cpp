@@ -27,8 +27,10 @@ static fftw_plan fftwp; /**!
 static int n; /*!< Used at raw I/Q data to complex conversion */
 
 double out_r, out_i; /*!< Real and imaginary parts of FFT *out values */
-static double amp, db; /*!< Amplitude & dB */
+static double harmonic_power, dBFS; /*!< Amplitude & dB */
 std::thread samples_thread;
+
+std::vector<double> lut_signed_iq;
 
 TForm1 *Form1;
 rtlsdr_dev_t *dev=NULL; //rtl-sdr device
@@ -84,6 +86,9 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
   Chart1->Axes->FastCalc = True;
   Series1->DrawAllPoints=false;
 
+  for (unsigned int i = 0; i < 0x100; i++){
+	 lut_signed_iq.push_back((i - 127.4f) / 128.0f);
+  }
 
 }
 
@@ -122,7 +127,7 @@ static void create_fft(int sample_c, uint8_t *buf){
 	 * Convert buffer from IQ to complex ready for FFTW.
 	 * RTL-SDR outputs 'IQIQIQ...' so we have to read two samples
 	 * at the same time. 'n' is declared for this approach.
-	 * Sample is 127 for zero signal, so substract ~127.34 for exact value.
+	 * Sample is 127 for zero signal, so substract ~127.5 for exact value.
 	 * Loop through samples and fill 'in' array with complex samples.
 	 *
 	 * NOTE: There is a common issue with cheap RTL-SDR receivers which
@@ -135,31 +140,24 @@ static void create_fft(int sample_c, uint8_t *buf){
 	 *
 	 * TODO #1: Implement I/Q correction
 	 */
-
 	for (int i=0; i<sample_c; i++){
-		in[i][0] = ((buf[i*2]-127.34));
-		in[i][1] = ((buf[i*2+1]-127.34));
-//		in[i][0] = ((buf[i*2]-127.4)/128);
-//		in[i][1] = ((buf[i*2+1]-127.4)/128);
+		in[i][0] = lut_signed_iq[buf[i*2]];
+		in[i][1] = lut_signed_iq[buf[i*2+1]];
 	}
 	/**!
 	 * Convert the complex samples to complex frequency domain.
 	 * Compute FFT.
 	 */
-	//centering(in);
 	fftw_execute(fftwp);
 	Form1->Series1->Delete(0,sample_c);
 	Application->ProcessMessages();
 	std::rotate(&out[0], &out[(sample_c>>1)],&out[sample_c]);
 	for (int i=0; i < sample_c; i+=2){
 	   out_r = out[i][0] * out[i][0];
-	   //Memo1->Lines->Add(out_r);
 	   out_i = out[i][1] * out[i][1];
-	   //Memo1->Lines->Add("Failed to set tuner gain");
-	   amp = sqrt(out_r + out_i);
-	   amp=amp*amp/(sample_c*2048000);
-	   db = 10 * log10(amp);
-	   Form1->Series1->AddXY(i,db);
+	   harmonic_power = out_r + out_i;
+	   dBFS = 10 * log10(harmonic_power/(sample_c*sample_c));
+	   Form1->Series1->AddXY(i,dBFS);
 	}
 	/**!
 	 * Deallocate FFT plan.
@@ -300,8 +298,8 @@ void __fastcall TForm1::Button1Click(TObject *Sender)
 void signal_simulation(int frequency){
  uint8_t signal_buf[n_read*2];
  for (int i=0;i<n_read; i++) {
-   signal_buf[i*2]=(uint8_t)(127.5*cos(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128);
-   signal_buf[i*2+1]=(uint8_t)(127.5*sin(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128);
+	signal_buf[i*2]=(uint8_t)(127.5*cos(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128);
+    signal_buf[i*2+1]=(uint8_t)(127.5*sin(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128);
  }
 
 // for (int i = 0; i < 512; i++) {
