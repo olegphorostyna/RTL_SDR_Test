@@ -34,6 +34,7 @@ TForm1 *Form1;
 rtlsdr_dev_t *dev=NULL; //rtl-sdr device
 DeviceConfig config;
 ChartConfig chartConf;
+bool isSimulation = false;
 //---------------------------------------------------------------------------
 __fastcall TForm1::TForm1(TComponent* Owner)
 	: TForm(Owner)
@@ -43,7 +44,7 @@ __fastcall TForm1::TForm1(TComponent* Owner)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::FormCreate(TObject *Sender)
 {
-
+   TrackBar1->Enabled = isSimulation;
 
   Chart1->ClipPoints = false;
   Chart1->Title->Visible = false;
@@ -148,7 +149,9 @@ static void create_fft(int sample_c, uint8_t *buf){
 	 */
 	fftw_execute(fftwp);
 	Form1->Series1->Delete(0,sample_c);
-	Application->ProcessMessages();
+	if(!isSimulation){
+		Application->ProcessMessages();
+	}
 	std::rotate(&out[0], &out[(sample_c>>1)],&out[sample_c]);
 	for (int i=0; i < sample_c; i+=2){
 	   out_r = out[i][0] * out[i][0];
@@ -293,36 +296,31 @@ void __fastcall TForm1::Button1Click(TObject *Sender)
 	readSamples();
 }
 //---------------------------------------------------------------------------
-void signal_simulation(int frequency){
+void signal_simulation(){
  uint8_t signal_buf[config.n_read*2];
  for (int i=0;i<config.n_read; i++) {
 	double multiplier = 0.5 * (1 - cos(2*M_PI*i/config.n_read));
-	signal_buf[i*2]=(uint8_t)(multiplier*(127.5*cos(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128));
-	signal_buf[i*2+1]=(uint8_t)(multiplier*(127.5*sin(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128));
- }
-
-// for (int i = 0; i < 512; i++) {
-//   RealTimeAdd(Form1->Series1,signal_buf[i*2], i);
-//  // RealTimeAdd(Form1->Series2,signal_buf[i*2+1], i);
-// }
- for (int i=0;i<config.n_read; i++){
-
+	signal_buf[i*2]=(uint8_t)(multiplier*(127.5*cos(2*M_PI*config.center_frequency*(1.0/config.sample_rate)*i)+128));
+	signal_buf[i*2+1]=(uint8_t)(multiplier*(127.5*sin(2*M_PI*config.center_frequency*(1.0/config.sample_rate)*i)+128));
  }
  create_fft(config.n_read, signal_buf);
 }
 
 void __fastcall TForm1::Button3Click(TObject *Sender)
 {
-	signal_simulation(100'000);
+	isSimulation=!isSimulation;
+    TrackBar1->Enabled = isSimulation;
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TForm1::TrackBar1Change(TObject *Sender)
 {
+
    Series1->Delete(0,config.n_read);
    Series2->Delete(0,config.n_read);
    TrackValue->Caption=TrackBar1->Position;
-   signal_simulation(TrackBar1->Position);
+   config.center_frequency=TrackBar1->Position;
+   signal_simulation();
 }
 //---------------------------------------------------------------------------
 
