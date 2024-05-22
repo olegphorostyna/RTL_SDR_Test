@@ -53,20 +53,32 @@ public:		// User declarations
 class DeviceConfig{
   public:
    int gains[100]; //avaliable tuner gains in tenths of a dB, 115 means 11.5 dB
+   int gain_n;
    uint8_t *buffer;
    uint32_t out_block_size = 16 * 16384;
    int bytes_in_response;
 
+   const int n_read = 512; /*!< Sample count & data points & FFT size */
+
    DeviceConfig();
    ~DeviceConfig();
 
-//   uint32_t center_frequency = 434'000'000;
-//   uint32_t center_frequency = 101'700'000;
-	uint32_t center_frequency = 100'700'000;
+
+   uint32_t center_frequency = 100'700'000;
+   uint32_t leftBound = (center_frequency-1'024'000)/1'000;
+   uint32_t rightBound = (center_frequency+1'024'000)/1'000;
+   uint32_t freq_step = 2'048'000/n_read/1'000;
+
    uint32_t sample_rate = 512*4000;//2 048 000
    bool freq_update = false;
    bool shutDown= false;
    bool read_samples=true;
+
+   void setCenterFrequency(rtlsdr_dev_t *dev){
+	   rtlsdr_set_center_freq(dev, this->center_frequency);
+	   leftBound=(center_frequency-1'024'000)/1'000;
+	   rightBound=(center_frequency+1'024'000)/1'000;
+   }
 };
 
 DeviceConfig::DeviceConfig(){
@@ -80,8 +92,7 @@ class ChartConfig{
  public:
    // Number of points we'll be displaying
   int MaxPoints=512;
-  // Number of points deleted when scrolling chart
-  int ScrollPoints = 5000;
+
 
 };
 

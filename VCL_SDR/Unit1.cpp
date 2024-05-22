@@ -16,8 +16,6 @@
 #pragma package(smart_init)
 #pragma resource "*.dfm"
 
-#define NUM_READ 512
-static const int n_read = NUM_READ; /*!< Sample count & data points & FFT size */
 static fftw_complex *in, *out; /*!< Input and output arrays of the transform */
 static fftw_plan fftwp; /**!
 			 * FFT plan that will contain
@@ -68,7 +66,7 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
   // we're assuming left axis values are within [0,250]
   //Chart1->LeftAxis->SetMinMax(-20,45);
   Chart1->LeftAxis->SetMinMax(-90,-30);
-  Chart1->BottomAxis->SetMinMax(0,n_read);
+  Chart1->BottomAxis->SetMinMax(config.leftBound, config.rightBound);
 
   // Speed tips:
   // When using only a single thread, disable locking:
@@ -157,7 +155,7 @@ static void create_fft(int sample_c, uint8_t *buf){
 	   out_i = out[i][1] * out[i][1];
 	   harmonic_power = out_r + out_i;
 	   dBFS = 10 * log10(harmonic_power/(sample_c*sample_c));
-	   Form1->Series1->AddXY(i,dBFS);
+	   Form1->Series1->AddXY(config.leftBound+i*config.freq_step,dBFS);
 	}
 	/**!
 	 * Deallocate FFT plan.
@@ -182,11 +180,11 @@ static void create_fft(int sample_c, uint8_t *buf){
  */
 static void async_read_callback(uint8_t *n_buf, uint32_t len, void *ctx){
 
-	create_fft(n_read, n_buf);
+	create_fft(config.n_read, n_buf);
 	if(!config.read_samples){
 		rtlsdr_cancel_async(dev);
 	}else {
-		rtlsdr_read_async(dev, async_read_callback, NULL, 0, n_read * n_read);
+		rtlsdr_read_async(dev, async_read_callback, NULL, 0, config.n_read * config.n_read);
 	}
 	//_cont_read - 0 for only one read and 1 for continues read
 	//_num_read - number of read to do
@@ -194,7 +192,7 @@ static void async_read_callback(uint8_t *n_buf, uint32_t len, void *ctx){
 	//_refresh_rate - how long to wait beetwen the read operations(default 500ms)
 //	if (_cont_read && read_count < _num_read){
 //		usleep(1000*_refresh_rate);
-//		rtlsdr_read_async(dev, async_read_callback, NULL, 0, n_read * n_read);
+//		rtlsdr_read_async(dev, async_read_callback, NULL, 0, config.n_read * config.n_read);
 //	}else{
 //		log_info("Done, exiting...\n");
 //		do_exit();
@@ -227,13 +225,12 @@ if (0 != rtlsdr_open(&dev, 0)) {
 	return;
 } else{
 	Memo1->Lines->Add("rtl-sdr device is opened");
-	count = rtlsdr_get_tuner_gains(dev, NULL);
-	Memo1->Lines->Add(message.sprintf(L"Supported gain values (%d): ", count));
-
-	count = rtlsdr_get_tuner_gains(dev, config.gains);
+	config.gain_n = rtlsdr_get_tuner_gains(dev, NULL);
+	Memo1->Lines->Add(message.sprintf(L"Supported gain values (%d): ", config.gain_n));
+	rtlsdr_get_tuner_gains(dev, config.gains);
 	message.SetLength(0);
 	int manual_gain_val;
-	for (int i = 0; i < count; i++){
+	for (int i = 0; i < config.gain_n; i++){
 		 message+=FloatToStr(config.gains[i]/10.0)+", ";
 		 if (config.gains[i] > 250 && config.gains[i] < 300)
 			manual_gain_val = config.gains[i];
@@ -278,12 +275,13 @@ config.shutDown = true;
 //---------------------------------------------------------------------------
 
 void readSamples(){
-	rtlsdr_read_async(dev, async_read_callback, NULL, 0, n_read * n_read);
+	rtlsdr_read_async(dev, async_read_callback, NULL, 0, config.n_read * config.n_read);
 	if (config.shutDown) {
 		rtlsdr_close(dev);
 	}
 	if(config.freq_update){
-	   rtlsdr_set_center_freq(dev, config.center_frequency);
+	   config.setCenterFrequency(dev);
+	   Form1->Chart1->BottomAxis->SetMinMax(config.leftBound, config.rightBound);
 	   config.read_samples=true;
 	   config.freq_update=false;
 	   readSamples();
@@ -296,17 +294,21 @@ void __fastcall TForm1::Button1Click(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 void signal_simulation(int frequency){
- uint8_t signal_buf[n_read*2];
- for (int i=0;i<n_read; i++) {
-	signal_buf[i*2]=(uint8_t)(127.5*cos(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128);
-    signal_buf[i*2+1]=(uint8_t)(127.5*sin(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128);
+ uint8_t signal_buf[config.n_read*2];
+ for (int i=0;i<config.n_read; i++) {
+	double multiplier = 0.5 * (1 - cos(2*M_PI*i/config.n_read));
+	signal_buf[i*2]=(uint8_t)(multiplier*(127.5*cos(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128));
+	signal_buf[i*2+1]=(uint8_t)(multiplier*(127.5*sin(2*M_PI*frequency*(1.0/config.sample_rate)*i)+128));
  }
 
 // for (int i = 0; i < 512; i++) {
 //   RealTimeAdd(Form1->Series1,signal_buf[i*2], i);
 //  // RealTimeAdd(Form1->Series2,signal_buf[i*2+1], i);
 // }
- create_fft(n_read, signal_buf);
+ for (int i=0;i<config.n_read; i++){
+
+ }
+ create_fft(config.n_read, signal_buf);
 }
 
 void __fastcall TForm1::Button3Click(TObject *Sender)
@@ -317,8 +319,8 @@ void __fastcall TForm1::Button3Click(TObject *Sender)
 
 void __fastcall TForm1::TrackBar1Change(TObject *Sender)
 {
-   Series1->Delete(0,n_read);
-   Series2->Delete(0,n_read);
+   Series1->Delete(0,config.n_read);
+   Series2->Delete(0,config.n_read);
    TrackValue->Caption=TrackBar1->Position;
    signal_simulation(TrackBar1->Position);
 }
@@ -327,9 +329,9 @@ void __fastcall TForm1::TrackBar1Change(TObject *Sender)
 void __fastcall TForm1::Button4Click(TObject *Sender)
 {
 rtlsdr_read_sync(dev, config.buffer, config.out_block_size, &config.bytes_in_response);
-Form1->Series1->Delete(0,n_read);
-Form1->Series2->Delete(0,n_read);
-   for (int i = 0; i < n_read; i++) {
+Form1->Series1->Delete(0,config.n_read);
+Form1->Series2->Delete(0,config.n_read);
+   for (int i = 0; i < config.n_read; i++) {
    Form1->Series1->AddXY(i, config.buffer[i*2]);
    Form1->Series2->AddXY(i, config.buffer[i*2+1]);
 }
