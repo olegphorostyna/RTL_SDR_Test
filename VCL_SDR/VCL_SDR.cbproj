@@ -183,16 +183,16 @@
             <BuildOrder>4</BuildOrder>
             <IgnorePath>true</IgnorePath>
         </LibFiles>
+        <CppCompile Include="main.cpp">
+            <Form>Form1</Form>
+            <FormType>dfm</FormType>
+            <DependentOn>main.h</DependentOn>
+            <BuildOrder>2</BuildOrder>
+        </CppCompile>
         <LibFiles Include="rtlsdr.a" Condition="'$(Platform)'=='Win64'">
             <BuildOrder>3</BuildOrder>
             <IgnorePath>true</IgnorePath>
         </LibFiles>
-        <CppCompile Include="Unit1.cpp">
-            <Form>Form1</Form>
-            <FormType>dfm</FormType>
-            <DependentOn>Unit1.h</DependentOn>
-            <BuildOrder>2</BuildOrder>
-        </CppCompile>
         <CppCompile Include="VCL_SDR.cpp">
             <BuildOrder>0</BuildOrder>
         </CppCompile>
@@ -200,7 +200,11 @@
             <BuildOrder>1</BuildOrder>
             <PCH>true</PCH>
         </PCHCompile>
-        <FormResources Include="Unit1.dfm"/>
+        <CppCompile Include="waterfallPlot.cpp">
+            <DependentOn>waterfallPlot.h</DependentOn>
+            <BuildOrder>5</BuildOrder>
+        </CppCompile>
+        <FormResources Include="main.dfm"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

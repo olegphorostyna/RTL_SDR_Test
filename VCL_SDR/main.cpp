@@ -1,9 +1,9 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #include <vcl.h>
 #pragma hdrstop
 
-#include "Unit1.h"
+#include "main.h"
 #include <sstream>
 #include <complex>
 #include <vector>
@@ -31,6 +31,9 @@ std::thread samples_thread;
 
 std::vector<double> lut_signed_iq;
 std::vector<double> lut_hann_window;
+
+
+
 
 TForm1 *Form1;
 rtlsdr_dev_t *dev=NULL; //rtl-sdr device
@@ -69,6 +72,8 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
   // we're assuming left axis values are within [0,250]
   //Chart1->LeftAxis->SetMinMax(-20,45);
   Chart1->LeftAxis->SetMinMax(-90,-30);
+  Chart1->MarginLeft=0;
+  Chart1->MarginRight=1;
   Chart1->BottomAxis->SetMinMax(config.leftBound, config.rightBound);
 
   // Speed tips:
@@ -122,7 +127,7 @@ static void create_fft(int sample_c, uint8_t *buf){
 		Application->ProcessMessages();
 	}
 	std::rotate(out[0], out[(sample_c>>1)],out[sample_c]);
-	for (int i=0; i < sample_c; i+=2){
+	for (int i=0; i < sample_c; i++){
 	   out_r = out[i][0] * out[i][0];
 	   out_i = out[i][1] * out[i][1];
 	   harmonic_power = out_r + out_i;
@@ -131,6 +136,7 @@ static void create_fft(int sample_c, uint8_t *buf){
 		  Form1->Series1->AddXY(config.leftBound+i*config.freq_step,dBFS[i]);
 	   }
 	}
+	 Form1->plot->addLine(dBFS,sample_c);
 	for (int i=0; i < 40; i++){
 		config.avg_center_power+=dBFS[(sample_c>>1)-20+i];
 	}
@@ -178,20 +184,21 @@ int count, r;
 
 int device_count = rtlsdr_get_device_count();
 if (!device_count) {
-	Memo1->Lines->Add("No devices found.");
+	Memo1->Lines->Add(L"Пристрою не знайдено");
 	return;
 } else{
-	Memo1->Lines->Add(message.sprintf(L"Device found: %hs ", rtlsdr_get_device_name(0)));
+	Memo1->Lines->Add(message.sprintf(L"Новий пристрій знайдено: %hs ", rtlsdr_get_device_name(0)));
+	infoDevName->Caption=message.sprintf(L"%hs",rtlsdr_get_device_name(0));
 }
 
 //open the first default(0) rtl-sdr device
 if (0 != rtlsdr_open(&dev, 0)) {
-	Memo1->Lines->Add("Failed to open the rtl-sdr device");
+	Memo1->Lines->Add(L"Помилка відкриття rtl-sdr пристрою");
 	return;
 } else{
-	Memo1->Lines->Add("rtl-sdr device is opened");
+	Memo1->Lines->Add(L"rtl-sdr пристрій ініціалізовано");
 	config.gain_n = rtlsdr_get_tuner_gains(dev, NULL);
-	Memo1->Lines->Add(message.sprintf(L"Supported gain values (%d): ", config.gain_n));
+	Memo1->Lines->Add(message.sprintf(L"Можливі значення підсилення (%d): ", config.gain_n));
 	rtlsdr_get_tuner_gains(dev, config.gains);
 	message.SetLength(0);
 	int manual_gain_val;
@@ -206,9 +213,10 @@ if (0 != rtlsdr_open(&dev, 0)) {
 	//manually set gain mode (0 for automatic)
 	rtlsdr_set_tuner_gain_mode(dev, 1);
 	if(!rtlsdr_set_tuner_gain(dev, manual_gain_val)){
-		Memo1->Lines->Add(message.sprintf(L"Gain set to %.1f", manual_gain_val/10.0));
+		Memo1->Lines->Add(message.sprintf(L"Підсилення встановлено %.1f", manual_gain_val/10.0));
+		infoGain->Caption=message.sprintf(L"%.1f dB", manual_gain_val/10.0);
 	} else {
-		Memo1->Lines->Add("Failed to set tuner gain");
+		Memo1->Lines->Add(L"Неможливо встановити підсилення");
 	}
 
     /**!
@@ -223,12 +231,14 @@ if (0 != rtlsdr_open(&dev, 0)) {
 	/* Reset endpoint before we start reading from it (mandatory) */
 	int r = rtlsdr_reset_buffer(dev);
 		if (r < 0){
-			Memo1->Lines->Add("Failed to reset buffers.");
+			Memo1->Lines->Add("Помилка очистки буфера");
 			return;
 		}
 	}
 	config.read_samples=true;
 	config.shutDown=false;
+	infoFFTSize->Caption=config.n_read;
+	infoSampleRate->Caption=config.sample_rate;
 }
 
 //---------------------------------------------------------------------------
@@ -322,4 +332,19 @@ void __fastcall TForm1::Button5Click(TObject *Sender)
 	config.read_samples=false;
 }
 //---------------------------------------------------------------------------
+
+
+void __fastcall TForm1::FormShow(TObject *Sender)
+{
+plot = new WaterfallPlot(this->Image1);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::FormDestroy(TObject *Sender)
+{
+ delete(plot);
+}
+//---------------------------------------------------------------------------
+
+
 

@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------
 
-#ifndef Unit1H
-#define Unit1H
+#ifndef mainH
+#define mainH
 //---------------------------------------------------------------------------
 #include <System.Classes.hpp>
 #include <Vcl.Controls.hpp>
@@ -17,6 +17,7 @@
 #include "./include/fftw3.h"
 #include <Vcl.ComCtrls.hpp>
 #include <Vcl.NumberBox.hpp>
+#include "waterfallPlot.h"
 //---------------------------------------------------------------------------
 extern rtlsdr_dev_t *dev;
 
@@ -38,6 +39,22 @@ __published:	// IDE-managed Components
 	TNumberBox *NumberBox1;
 	TLabel *avg_power;
 	TButton *Button5;
+	TImage *Image1;
+	TLabel *Label2;
+	TTrackBar *TrackBar2;
+	TLabel *Label3;
+	TPanel *infoPanel;
+	TLabel *Label4;
+	TLabel *Label5;
+	TLabel *Label6;
+	TLabel *Label7;
+	TLabel *Label8;
+	TLabel *Label9;
+	TPanel *Panel2;
+	TLabel *infoDevName;
+	TLabel *infoSampleRate;
+	TLabel *infoFFTSize;
+	TLabel *infoGain;
 	void __fastcall FormCreate(TObject *Sender);
 	void __fastcall StartRTLSDRClick(TObject *Sender);
 	void __fastcall Button2Click(TObject *Sender);
@@ -47,10 +64,14 @@ __published:	// IDE-managed Components
 	void __fastcall Button4Click(TObject *Sender);
 	void __fastcall NumberBox1KeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
 	void __fastcall Button5Click(TObject *Sender);
+	void __fastcall FormShow(TObject *Sender);
+	void __fastcall FormDestroy(TObject *Sender);
 
 
 private:	// User declarations
+
 public:		// User declarations
+     WaterfallPlot *plot;
 	__fastcall TForm1(TComponent* Owner);
 };
 
@@ -94,6 +115,7 @@ DeviceConfig::DeviceConfig(){
 DeviceConfig::~DeviceConfig(){
 	free (buffer);
 }
+
 
 class ChartConfig{
  public:
