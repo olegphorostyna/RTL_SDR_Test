@@ -23,16 +23,18 @@ static fftw_plan fftwp; /**!
 			 * to compute the FFT
 			 */
 static int n; /*!< Used at raw I/Q data to complex conversion */
-
+DeviceConfig config;
 double out_r, out_i; /*!< Real and imaginary parts of FFT *out values */
-static double harmonic_power, dBFS; /*!< Amplitude & dB */
+double harmonic_power; /*!< Amplitude & dB */
+double dBFS[512];
 std::thread samples_thread;
 
 std::vector<double> lut_signed_iq;
+std::vector<double> lut_hann_window;
 
 TForm1 *Form1;
 rtlsdr_dev_t *dev=NULL; //rtl-sdr device
-DeviceConfig config;
+
 ChartConfig chartConf;
 bool isSimulation = false;
 //---------------------------------------------------------------------------
@@ -88,6 +90,13 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
   for (unsigned int i = 0; i < 0x100; i++){
 	 lut_signed_iq.push_back((i - 127.4f) / 128.0f);
   }
+   for (unsigned int i = 0; i < config.n_read; i++){
+	 lut_hann_window.push_back(0.5 * (1 - cos(2*M_PI*i/config.n_read)));
+  }
+
+
+
+
 
 }
 
@@ -98,76 +107,42 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
  * \param buf array that contains I/Q samples
  */
 static void create_fft(int sample_c, uint8_t *buf){
-	/**!
-	 * Configure FFTW to convert the samples in time domain to frequency domain.
-	 * Allocate memory for 'in' and 'out' arrays.
-	 * fftw_complex type is a basically double[2] where
-	 * the [0] element holds the real part and the [1] element holds the imaginary part.
-	 * in -> Complex numbers processed from 8-bit I/Q values.
-	 * out -> Output of FFT (computed from complex input).
-	 */
+
+	config.avg_center_power = 0;
 	in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*sample_c);
 	out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*sample_c);
-	/**!
-	 * Declare FFTW plan which is responsible for having in and out data.
-	 * First parameter (sample_c) -> FFT size
-	 * FFTW_FORWARD/FFTW_BACKWARD -> Indicates the direction of the transform.
-	 * Technically, sign of the exponent in the transform.
-	 * FFTW_MEASURE/FFTW_ESTIMATE
-	 * Use FFTW_MEASURE if you want to execute several FFTs and find the
-	 * best computation in certain amount of time. (Usually a few seconds)
-	 * FFTW_ESTIMATE is the contrary. Does not run any computation, just
-	 * builds a reasonable plan.
-	 * If you are dealing with many transforms of the same FFT size and
-	 * initialization time is not important, use FFT_MEASURE.
-	 */
 	fftwp = fftw_plan_dft_1d(sample_c, in, out, FFTW_FORWARD, FFTW_MEASURE);
-	/**!
-	 * Convert buffer from IQ to complex ready for FFTW.
-	 * RTL-SDR outputs 'IQIQIQ...' so we have to read two samples
-	 * at the same time. 'n' is declared for this approach.
-	 * Sample is 127 for zero signal, so substract ~127.5 for exact value.
-	 * Loop through samples and fill 'in' array with complex samples.
-	 *
-	 * NOTE: There is a common issue with cheap RTL-SDR receivers which
-	 * is 'center frequency spike' / 'central peak' problem related to
-	 * I/Q imbalance. This problem can be solved with a implementation of
-	 * some algorithms.
-	 * More detail:
-	 * https://github.com/roger-/pyrtlsdr/issues/94
-	 * https://wiki.analog.com/resources/eval/user-guides/ad-fmcomms1-ebz/iq_correction
-	 *
-	 * TODO #1: Implement I/Q correction
-	 */
 	for (int i=0; i<sample_c; i++){
-		in[i][0] = lut_signed_iq[buf[i*2]];
-		in[i][1] = lut_signed_iq[buf[i*2+1]];
+		in[i][0] = lut_signed_iq[buf[i*2]]*lut_hann_window[i];
+		in[i][1] = lut_signed_iq[buf[i*2+1]]*lut_hann_window[i];
 	}
-	/**!
-	 * Convert the complex samples to complex frequency domain.
-	 * Compute FFT.
-	 */
 	fftw_execute(fftwp);
 	Form1->Series1->Delete(0,sample_c);
 	if(!isSimulation){
 		Application->ProcessMessages();
 	}
-	std::rotate(&out[0], &out[(sample_c>>1)],&out[sample_c]);
+	std::rotate(out[0], out[(sample_c>>1)],out[sample_c]);
 	for (int i=0; i < sample_c; i+=2){
 	   out_r = out[i][0] * out[i][0];
 	   out_i = out[i][1] * out[i][1];
 	   harmonic_power = out_r + out_i;
-	   dBFS = 10 * log10(harmonic_power/(sample_c*sample_c));
-	   Form1->Series1->AddXY(config.leftBound+i*config.freq_step,dBFS);
+	   dBFS[i] = 10 * log10(harmonic_power/(sample_c*sample_c));
+	   if(!config.trashold_mode){
+		  Form1->Series1->AddXY(config.leftBound+i*config.freq_step,dBFS[i]);
+	   }
 	}
-	/**!
-	 * Deallocate FFT plan.
-	 * Free 'in' and 'out' memory regions.
-	 */
+	for (int i=0; i < 40; i++){
+		config.avg_center_power+=dBFS[(sample_c>>1)-20+i];
+	}
+	config.avg_center_power/=40.0;
+	Form1->avg_power->Caption=config.avg_center_power;
+	if(config.trashold_mode && config.avg_center_power >(-20.0)){
+		Form1->Memo1->Lines->Add("Signal detected");
+		config.trashold_mode=!config.trashold_mode;
+	}
 	fftw_destroy_plan(fftwp);
 	fftw_free(in);
 	fftw_free(out);
-   //	read_count++;
 }
 
 /*!
@@ -189,20 +164,7 @@ static void async_read_callback(uint8_t *n_buf, uint32_t len, void *ctx){
 	}else {
 		rtlsdr_read_async(dev, async_read_callback, NULL, 0, config.n_read * config.n_read);
 	}
-	//_cont_read - 0 for only one read and 1 for continues read
-	//_num_read - number of read to do
-	//read_count - current read count; is increased after the each fft output
-	//_refresh_rate - how long to wait beetwen the read operations(default 500ms)
-//	if (_cont_read && read_count < _num_read){
-//		usleep(1000*_refresh_rate);
-//		rtlsdr_read_async(dev, async_read_callback, NULL, 0, config.n_read * config.n_read);
-//	}else{
-//		log_info("Done, exiting...\n");
-//		do_exit();
-//	}
 }
-
-
 
 
 //---------------------------------------------------------------------------
@@ -278,6 +240,7 @@ config.shutDown = true;
 //---------------------------------------------------------------------------
 
 void readSamples(){
+	//blocks till config.read_samples is true
 	rtlsdr_read_async(dev, async_read_callback, NULL, 0, config.n_read * config.n_read);
 	if (config.shutDown) {
 		rtlsdr_close(dev);
@@ -300,8 +263,9 @@ void signal_simulation(){
  uint8_t signal_buf[config.n_read*2];
  for (int i=0;i<config.n_read; i++) {
 	double multiplier = 0.5 * (1 - cos(2*M_PI*i/config.n_read));
-	signal_buf[i*2]=(uint8_t)(multiplier*(127.5*cos(2*M_PI*config.center_frequency*(1.0/config.sample_rate)*i)+128));
-	signal_buf[i*2+1]=(uint8_t)(multiplier*(127.5*sin(2*M_PI*config.center_frequency*(1.0/config.sample_rate)*i)+128));
+	//double multiplier = 1;
+	signal_buf[i*2]=(uint8_t)(multiplier*(127.5*cos(2*M_PI*config.center_frequency*(1.0/config.sample_rate)*i))+128);
+	signal_buf[i*2+1]=(uint8_t)(multiplier*(127.5*sin(2*M_PI*config.center_frequency*(1.0/config.sample_rate)*i))+128);
  }
  create_fft(config.n_read, signal_buf);
 }
@@ -309,7 +273,7 @@ void signal_simulation(){
 void __fastcall TForm1::Button3Click(TObject *Sender)
 {
 	isSimulation=!isSimulation;
-    TrackBar1->Enabled = isSimulation;
+	TrackBar1->Enabled = isSimulation;
 }
 //---------------------------------------------------------------------------
 
@@ -349,4 +313,13 @@ if (Key == VK_RETURN)
 //---------------------------------------------------------------------------
 
 
+
+void __fastcall TForm1::Button5Click(TObject *Sender)
+{
+	config.trashold_mode=!config.trashold_mode;
+    config.freq_update=true;
+	config.center_frequency =NumberBox1->Value*1'000'000;
+	config.read_samples=false;
+}
+//---------------------------------------------------------------------------
 

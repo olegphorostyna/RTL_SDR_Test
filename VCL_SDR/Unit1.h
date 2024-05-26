@@ -36,6 +36,8 @@ __published:	// IDE-managed Components
 	TFastLineSeries *Series2;
 	TButton *Button4;
 	TNumberBox *NumberBox1;
+	TLabel *avg_power;
+	TButton *Button5;
 	void __fastcall FormCreate(TObject *Sender);
 	void __fastcall StartRTLSDRClick(TObject *Sender);
 	void __fastcall Button2Click(TObject *Sender);
@@ -44,6 +46,8 @@ __published:	// IDE-managed Components
 	void __fastcall TrackBar1Change(TObject *Sender);
 	void __fastcall Button4Click(TObject *Sender);
 	void __fastcall NumberBox1KeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
+	void __fastcall Button5Click(TObject *Sender);
+
 
 private:	// User declarations
 public:		// User declarations
@@ -64,15 +68,18 @@ class DeviceConfig{
    ~DeviceConfig();
 
 
-   uint32_t center_frequency = 100'700'000;
+   uint32_t center_frequency = 100'000'000;
    uint32_t leftBound = (center_frequency-1'024'000)/1'000;
    uint32_t rightBound = (center_frequency+1'024'000)/1'000;
    uint32_t freq_step = 2'048'000/n_read/1'000;
+
+   double avg_center_power=0;
 
    uint32_t sample_rate = 512*4000;//2 048 000
    bool freq_update = false;
    bool shutDown= false;
    bool read_samples=true;
+   bool trashold_mode=false;
 
    void setCenterFrequency(rtlsdr_dev_t *dev){
 	   rtlsdr_set_center_freq(dev, this->center_frequency);

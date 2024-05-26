@@ -3,7 +3,7 @@ object Form1: TForm1
   Top = 0
   Caption = 'Form1'
   ClientHeight = 579
-  ClientWidth = 1127
+  ClientWidth = 1250
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -11,6 +11,9 @@ object Form1: TForm1
   Font.Name = 'Segoe UI'
   Font.Style = []
   OnCreate = FormCreate
+  DesignSize = (
+    1250
+    579)
   TextHeight = 15
   object Label1: TLabel
     Left = 8
@@ -26,6 +29,13 @@ object Form1: TForm1
     Width = 55
     Height = 15
     Caption = 'TrackValue'
+  end
+  object avg_power: TLabel
+    Left = 400
+    Top = 400
+    Width = 57
+    Height = 15
+    Caption = 'avg_power'
   end
   object StartRTLSDR: TButton
     Left = 8
@@ -50,26 +60,26 @@ object Form1: TForm1
   object Memo1: TMemo
     Left = 8
     Top = 447
-    Width = 1111
+    Width = 1234
     Height = 124
     ScrollBars = ssVertical
     TabOrder = 2
   end
   object Chart1: TChart
-    Left = 175
+    Left = 192
     Top = 8
-    Width = 944
-    Height = 377
+    Width = 1050
+    Height = 385
     Legend.Visible = False
     Title.Text.Strings = (
       'TChart')
     Title.Visible = False
     BottomAxis.Axis.Width = 1
-    BottomAxis.RoundFirstLabel = False
     ClipPoints = False
     LeftAxis.Axis.Width = 1
     View3D = False
     TabOrder = 3
+    Anchors = [akLeft, akTop, akRight, akBottom]
     DefaultCanvas = 'TGDIPlusCanvas'
     PrintMargins = (
       15
@@ -82,6 +92,7 @@ object Form1: TForm1
       SeriesColor = 15204364
       DrawAllPoints = False
       LinePen.Color = 15204364
+      LinePen.Width = 0
       XValues.Name = 'X'
       XValues.Order = loAscending
       YValues.Name = 'Y'
@@ -138,12 +149,21 @@ object Form1: TForm1
     OnClick = Button4Click
   end
   object NumberBox1: TNumberBox
-    Left = 864
-    Top = 391
+    Left = 273
+    Top = 399
     Width = 121
     Height = 23
     Mode = nbmFloat
     TabOrder = 8
     OnKeyDown = NumberBox1KeyDown
+  end
+  object Button5: TButton
+    Left = 192
+    Top = 399
+    Width = 75
+    Height = 25
+    Caption = 'Monitor'
+    TabOrder = 9
+    OnClick = Button5Click
   end
 end
