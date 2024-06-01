@@ -27,8 +27,6 @@ DeviceConfig config;
 double out_r, out_i; /*!< Real and imaginary parts of FFT *out values */
 double harmonic_power; /*!< Amplitude & dB */
 double dBFS[512];
-std::thread samples_thread;
-
 std::vector<double> lut_signed_iq;
 std::vector<double> lut_hann_window;
 
@@ -54,6 +52,7 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
   Chart1->ClipPoints = false;
   Chart1->Title->Visible = false;
   Chart1->Legend->Visible = false;
+  Chart1->CanClip();
   Chart1->LeftAxis->Axis->Width = 1;
   Chart1->BottomAxis->Axis->Width = 1;
   Chart1->BottomAxis->RoundFirstLabel = false;
@@ -71,7 +70,7 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
   // Initialize axis scales
   // we're assuming left axis values are within [0,250]
   //Chart1->LeftAxis->SetMinMax(-20,45);
-  Chart1->LeftAxis->SetMinMax(-90,-30);
+  Chart1->LeftAxis->SetMinMax(-90,0);
   Chart1->MarginLeft=0;
   Chart1->MarginRight=1;
   Chart1->BottomAxis->SetMinMax(config.leftBound, config.rightBound);
@@ -120,6 +119,8 @@ static void create_fft(int sample_c, uint8_t *buf){
 	for (int i=0; i<sample_c; i++){
 		in[i][0] = lut_signed_iq[buf[i*2]]*lut_hann_window[i];
 		in[i][1] = lut_signed_iq[buf[i*2+1]]*lut_hann_window[i];
+//		in[i][0] = lut_signed_iq[buf[i*2]];
+//		in[i][1] = lut_signed_iq[buf[i*2+1]];
 	}
 	fftw_execute(fftwp);
 	Form1->Series1->Delete(0,sample_c);
@@ -163,7 +164,6 @@ static void create_fft(int sample_c, uint8_t *buf){
  * \param ctx context which is given at rtlsdr_read_async(...)
  */
 static void async_read_callback(uint8_t *n_buf, uint32_t len, void *ctx){
-
 	create_fft(config.n_read, n_buf);
 	if(!config.read_samples){
 		rtlsdr_cancel_async(dev);
@@ -176,6 +176,7 @@ static void async_read_callback(uint8_t *n_buf, uint32_t len, void *ctx){
 //---------------------------------------------------------------------------
 void __fastcall TForm1::StartRTLSDRClick(TObject *Sender)
 {
+
 //RTLSDR_API int rtlsdr_open(rtlsdr_dev_t **dev, uint32_t index)
 int do_exit = 0;
 UnicodeString message;
@@ -250,17 +251,19 @@ config.shutDown = true;
 //---------------------------------------------------------------------------
 
 void readSamples(){
-	//blocks till config.read_samples is true
-	rtlsdr_read_async(dev, async_read_callback, NULL, 0, config.n_read * config.n_read);
-	if (config.shutDown) {
-		rtlsdr_close(dev);
-	}
-	if(config.freq_update){
-	   config.setCenterFrequency(dev);
-	   Form1->Chart1->BottomAxis->SetMinMax(config.leftBound, config.rightBound);
-	   config.read_samples=true;
-	   config.freq_update=false;
-	   readSamples();
+	while(true){
+		//blocks till config.read_samples is true
+		rtlsdr_read_async(dev, async_read_callback, NULL, 0, config.n_read * config.n_read);
+		if (config.shutDown) {
+			rtlsdr_close(dev);
+			return;
+		}
+		if(config.freq_update){
+		   config.setCenterFrequency(dev);
+		   Form1->Chart1->BottomAxis->SetMinMax(config.leftBound, config.rightBound);
+		   config.freq_update=false;
+		}
+		config.read_samples=true;
 	}
 }
 
@@ -272,10 +275,8 @@ void __fastcall TForm1::Button1Click(TObject *Sender)
 void signal_simulation(){
  uint8_t signal_buf[config.n_read*2];
  for (int i=0;i<config.n_read; i++) {
-	double multiplier = 0.5 * (1 - cos(2*M_PI*i/config.n_read));
-	//double multiplier = 1;
-	signal_buf[i*2]=(uint8_t)(multiplier*(127.5*cos(2*M_PI*config.center_frequency*(1.0/config.sample_rate)*i))+128);
-	signal_buf[i*2+1]=(uint8_t)(multiplier*(127.5*sin(2*M_PI*config.center_frequency*(1.0/config.sample_rate)*i))+128);
+	signal_buf[i*2]=(uint8_t)((127.5*cos(2*M_PI*config.center_frequency*(1.0/config.sample_rate)*i))+128);
+	signal_buf[i*2+1]=(uint8_t)((127.5*sin(2*M_PI*config.center_frequency*(1.0/config.sample_rate)*i))+128);
  }
  create_fft(config.n_read, signal_buf);
 }
@@ -284,6 +285,8 @@ void __fastcall TForm1::Button3Click(TObject *Sender)
 {
 	isSimulation=!isSimulation;
 	TrackBar1->Enabled = isSimulation;
+	config.center_frequency = 124'000;
+	signal_simulation();
 }
 //---------------------------------------------------------------------------
 

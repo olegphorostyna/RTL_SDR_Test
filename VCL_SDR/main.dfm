@@ -93,6 +93,7 @@ object Form1: TForm1
     BottomAxis.Axis.Width = 1
     ClipPoints = False
     LeftAxis.Axis.Width = 1
+    LeftAxis.ExactDateTime = False
     LeftAxis.LabelsFormat.Margins.Left = 0
     LeftAxis.LabelsFormat.Margins.Right = 0
     View3D = False
@@ -275,6 +276,7 @@ object Form1: TForm1
     Top = 421
     Width = 1054
     Height = 276
+    Align = alCustom
     Caption = 'Panel2'
     TabOrder = 12
     object Image1: TImage

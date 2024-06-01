@@ -9,14 +9,14 @@ class WaterfallPlot{
 		Graphics::TBitmap*  bitMap2;
 		TImage *image;
 		int linePointer=0;
-		void fillBitmap(double values[], int size);
+		void fillBitmap(double values[], size_t size);
 
 
 	public:
 		WaterfallPlot(TImage *image);
 		~WaterfallPlot();
-		void setDimensions(int width, int height);
-		void addLine(double values[], int size);
+		void setDimensions(size_t width, size_t height);
+		void addLine(double values[], size_t size);
 
 };
 #endif

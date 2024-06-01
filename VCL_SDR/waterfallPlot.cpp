@@ -35,14 +35,14 @@ WaterfallPlot::~WaterfallPlot(){
 	 delete bitMap2;
 
 }
-void WaterfallPlot::setDimensions(int width, int height){
+void WaterfallPlot::setDimensions(size_t width, size_t height){
 	 bitMap1->Width=width;
 	 bitMap2->Width=width;
 	 bitMap1->Height=height;
 	 bitMap2->Height=height;
 }
 
-void WaterfallPlot::addLine(double values[], int size){
+void WaterfallPlot::addLine(double values[], size_t size){
 	fillBitmap(values, size);
    //	HRGN MyRgn;
 	//MyRgn = ::CreateRectRgn(0,0,image->Width,linePointer);
@@ -55,12 +55,12 @@ void WaterfallPlot::addLine(double values[], int size){
 	image->Canvas->Draw(0,0,bitMap1);
 }
 
-void WaterfallPlot::fillBitmap(double values[], int size){
+void WaterfallPlot::fillBitmap(double values[], size_t size){
 	//BYTE *ptr = (BYTE*)bitMap1->ScanLine[bitMap1->Height-1];
 	int step =bitMap1->Width/size;
 	BYTE *ptr = (BYTE*)bitMap1->ScanLine[linePointer];
 	for (int x = 0; x < size; x++){
-			BYTE rand = (values[x]+20)/128*255;
+			BYTE rand = (values[x])/128*255;
 //            BYTE rand = random(256);
 		for(int j=0;j<step;j++){
 			ptr[x*step*3+j*3]=rand;

@@ -89,10 +89,10 @@ class DeviceConfig{
    ~DeviceConfig();
 
 
-   uint32_t center_frequency = 100'000'000;
-   uint32_t leftBound = (center_frequency-1'024'000)/1'000;
-   uint32_t rightBound = (center_frequency+1'024'000)/1'000;
-   uint32_t freq_step = 2'048'000/n_read/1'000;
+   int center_frequency = 100'000'000;
+   int leftBound = (center_frequency-1'024'000)/1'000;
+   int rightBound = (center_frequency+1'024'000)/1'000;
+   int freq_step = 2'048'000/n_read/1'000;
 
    double avg_center_power=0;
 
