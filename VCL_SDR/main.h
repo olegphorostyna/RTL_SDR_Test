@@ -18,6 +18,7 @@
 #include <Vcl.ComCtrls.hpp>
 #include <Vcl.NumberBox.hpp>
 #include "waterfallPlot.h"
+#include <Vcl.MPlayer.hpp>
 //---------------------------------------------------------------------------
 extern rtlsdr_dev_t *dev;
 
@@ -71,7 +72,8 @@ __published:	// IDE-managed Components
 private:	// User declarations
 
 public:		// User declarations
-     WaterfallPlot *plot;
+					WaterfallPlot *plot;
+					TMediaPlayer* Mp;
 	__fastcall TForm1(TComponent* Owner);
 };
 
@@ -81,7 +83,7 @@ class DeviceConfig{
    int gain_n;
    uint8_t *buffer;
    uint32_t out_block_size = 16 * 16384;
-   int bytes_in_response;
+			int bytes_in_response;
 
    const int n_read = 512; /*!< Sample count & data points & FFT size */
 
@@ -94,13 +96,14 @@ class DeviceConfig{
    int rightBound = (center_frequency+1'024'000)/1'000;
    int freq_step = 2'048'000/n_read/1'000;
 
-   double avg_center_power=0;
+   bool avg_center_power=0;
 
    uint32_t sample_rate = 512*4000;//2 048 000
    bool freq_update = false;
    bool shutDown= false;
    bool read_samples=true;
-   bool trashold_mode=false;
+			bool trashold_mode=false;
+   bool isSimulation=false;
 
    void setCenterFrequency(rtlsdr_dev_t *dev){
 	   rtlsdr_set_center_freq(dev, this->center_frequency);
@@ -115,18 +118,6 @@ DeviceConfig::DeviceConfig(){
 DeviceConfig::~DeviceConfig(){
 	free (buffer);
 }
-
-
-class ChartConfig{
- public:
-   // Number of points we'll be displaying
-  int MaxPoints=512;
-
-
-};
-
-
-
 
 //---------------------------------------------------------------------------
 extern PACKAGE TForm1 *Form1;

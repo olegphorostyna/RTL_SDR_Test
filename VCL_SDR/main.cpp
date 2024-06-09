@@ -21,11 +21,9 @@ static fftw_plan fftwp; /**!
 			 * FFT plan that will contain
 			 * all the data that FFTW needs
 			 * to compute the FFT
-			 */
-static int n; /*!< Used at raw I/Q data to complex conversion */
+				*/
 DeviceConfig config;
 double out_r, out_i; /*!< Real and imaginary parts of FFT *out values */
-double harmonic_power; /*!< Amplitude & dB */
 double dBFS[512];
 std::vector<double> lut_signed_iq;
 std::vector<double> lut_hann_window;
@@ -36,7 +34,6 @@ std::vector<double> lut_hann_window;
 TForm1 *Form1;
 rtlsdr_dev_t *dev=NULL; //rtl-sdr device
 
-ChartConfig chartConf;
 bool isSimulation = false;
 //---------------------------------------------------------------------------
 __fastcall TForm1::TForm1(TComponent* Owner)
@@ -47,14 +44,14 @@ __fastcall TForm1::TForm1(TComponent* Owner)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::FormCreate(TObject *Sender)
 {
-   TrackBar1->Enabled = isSimulation;
+			TrackBar1->Enabled = isSimulation;
 
   Chart1->ClipPoints = false;
   Chart1->Title->Visible = false;
   Chart1->Legend->Visible = false;
   Chart1->CanClip();
   Chart1->LeftAxis->Axis->Width = 1;
-  Chart1->BottomAxis->Axis->Width = 1;
+		Chart1->BottomAxis->Axis->Width = 1;
   Chart1->BottomAxis->RoundFirstLabel = false;
   Chart1->View3D = false;
   // Prepare series.
@@ -69,20 +66,20 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
 
   // Initialize axis scales
   // we're assuming left axis values are within [0,250]
-  //Chart1->LeftAxis->SetMinMax(-20,45);
+		//Chart1->LeftAxis->SetMinMax(-20,45);
   Chart1->LeftAxis->SetMinMax(-90,0);
   Chart1->MarginLeft=0;
   Chart1->MarginRight=1;
   Chart1->BottomAxis->SetMinMax(config.leftBound, config.rightBound);
 
   // Speed tips:
-  // When using only a single thread, disable locking:
+		// When using only a single thread, disable locking:
   Chart1->Canvas->ReferenceCanvas->Pen->OwnerCriticalSection = 0;
   Series1->LinePen->OwnerCriticalSection = 0;
 
 
   // For Windows NT, 2000 and XP only:
-  // Speed realtime painting with solid pens of width 1.
+		// Speed realtime painting with solid pens of width 1.
   Series1->FastPen = true;
 
   // Set axis calculations in "fast mode".
@@ -98,9 +95,10 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
 	 lut_hann_window.push_back(0.5 * (1 - cos(2*M_PI*i/config.n_read)));
   }
 
+  Mp = new TMediaPlayer(this->Handle);
 
-
-
+		Mp->FileName = "sound27.wav";
+		Mp->Open();
 
 }
 
@@ -131,21 +129,25 @@ static void create_fft(int sample_c, uint8_t *buf){
 	for (int i=0; i < sample_c; i++){
 	   out_r = out[i][0] * out[i][0];
 	   out_i = out[i][1] * out[i][1];
-	   harmonic_power = out_r + out_i;
-	   dBFS[i] = 10 * log10(harmonic_power/(sample_c*sample_c));
-	   if(!config.trashold_mode){
+				double harmonic_power = out_r + out_i;
+				dBFS[i] = 10 * log10(harmonic_power/(sample_c*sample_c));
 		  Form1->Series1->AddXY(config.leftBound+i*config.freq_step,dBFS[i]);
-	   }
+
 	}
 	 Form1->plot->addLine(dBFS,sample_c);
 	for (int i=0; i < 40; i++){
-		config.avg_center_power+=dBFS[(sample_c>>1)-20+i];
+		if(dBFS[(sample_c>>1)-20+i]>-20.0){
+			config.avg_center_power=true;
+			break;
+		}
 	}
-	config.avg_center_power/=40.0;
-	Form1->avg_power->Caption=config.avg_center_power;
-	if(config.trashold_mode && config.avg_center_power >(-20.0)){
-		Form1->Memo1->Lines->Add("Signal detected");
-		config.trashold_mode=!config.trashold_mode;
+	if(config.trashold_mode){
+			Form1->avg_power->Caption=config.avg_center_power;
+			if(config.avg_center_power){
+						Form1->Memo1->Lines->Add("Signal detected");
+						Form1->Mp->Play();
+						config.avg_center_power=false;
+					}
 	}
 	fftw_destroy_plan(fftwp);
 	fftw_free(in);
@@ -345,7 +347,8 @@ plot = new WaterfallPlot(this->Image1);
 
 void __fastcall TForm1::FormDestroy(TObject *Sender)
 {
- delete(plot);
+	delete(plot);
+	delete(Mp);
 }
 //---------------------------------------------------------------------------
 

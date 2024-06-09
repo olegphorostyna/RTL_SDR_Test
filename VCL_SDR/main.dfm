@@ -33,8 +33,8 @@ object Form1: TForm1
     Caption = #1063#1072#1089#1090#1086#1090#1072
   end
   object avg_power: TLabel
-    Left = 400
-    Top = 400
+    Left = 8
+    Top = 318
     Width = 57
     Height = 15
     Caption = 'avg_power'
